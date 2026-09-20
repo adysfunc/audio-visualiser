@@ -1,5 +1,8 @@
 import array
 import cmath
+import matplotlib.pyplot as plt
+import wave
+import numpy as np
 
 def fft(samps):
     samplen = len(samps)
@@ -17,5 +20,22 @@ def fft(samps):
             freq[k+samplen//2] = evensamps[k]- twiddle*oddsamps[k]
         return freq
 
-samps = [11, 12, 13, 14, 15, 16, 17, 18]
-print(fft(samps))
+with wave.open('voice-telephony-8khz.wav') as wv_obj:
+    samples = wv_obj.readframes(20)
+    # samples = wv_obj.readframes(wv_obj.getnframes())
+    print(wv_obj.getparams())
+    # print(wv_obj.getnframes()/wv_obj.getframerate())
+int_samples = array.array('h', samples).tolist()
+freqbins = fft(int_samples)
+nparr = np.array(freqbins, dtype=complex)
+print(freqbins)
+sr = 8000
+# N = len(freqbins)
+# n = np.arange(N)
+# # T = N/sr
+# freq = n/T 
+
+fig,ax = plt.subplots()
+plt.stem(nparr.real, nparr.imag)
+plt.axis('equal')
+plt.show()
