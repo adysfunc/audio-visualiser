@@ -23,7 +23,8 @@ def fft(samps):
 
 def read():
     with wave.open('voice-telephony-8khz.wav') as wv_obj:
-        # samples = wv_obj.readframes(50)
+        # samples = wv_obj.readframes(100)
+        FRAMERATE = wv_obj.getframerate()
         samples = wv_obj.readframes(wv_obj.getnframes())
         # print(wv_obj.getparams())
         # print(wv_obj.getnframes()/wv_obj.getframerate())
@@ -37,7 +38,7 @@ def read():
     mags = []
     for i in range(len(chunks)):
         mags.append(np.abs(fft(chunks[i])))
-    print(mags[0][:256])
+    # print(mags[0][:256])
     # print(len(mags))
     # print(mags)
     # print(int_samples) 
@@ -51,43 +52,57 @@ def read():
     #since real samples produce the same magnitudes in the negative and postive frequency bins
     # we can discard the values in the negative bins and instead multiply the magnitudes in the positive side(excluding the 1st bin(oth bin) and the last Nyquist(256thbin))
     # for now just remving the 0th and the 256th bin and in this code
-    positive_sepctrum = [mag[:mag.size//2+1][1:-1]*2 for mag in mags]
+    positive_spectrum = [mag[:mag.size//2+1][1:-1]*2 for mag in mags]
     # print(positive_sepctrum[0])
     # positive_sepctrum = mags[:mags.size//2+1]
     # positive_sepctrum[1:-1] *= 2
-    freq_res = wv_obj.getframerate()/wv_obj.getnframes()
-    actual_freqbins = np.arange(len(positive_sepctrum)) * freq_res
+    # freq_res = wv_obj.getframerate()/wv_obj.getnframes() 
+    freq_res = FRAMERATE/512
+    freq_bins = [np.arange(len(values))* freq_res for values in positive_spectrum]
+    return positive_spectrum
+    # print(len(freq_bins[0]), len(positive_spectrum[0]))
+    # actual_freqbins = np.arange(len(positive_spectrum)) * freq_res
+    # print(type(freq_bins), type(positive_spectrum[0]))
 
-read()
+points = read()
+delta = 512/60
+pygame.mixer.pre_init(frequency = 8000, size= -16, channels = 1, buffer = 512)
+pygame.init()
+pygame.mixer.init()
+screen = pygame.display.set_mode((1280, 720))
+clock = pygame.time.Clock()
+running = True
 
-# pygame.mixer.pre_init(frequency = 8000, size= -16, channels = 1)
-# pygame.init()
-# pygame.mixer.init()
-# screen = pygame.display.set_mode((1280, 720))
-# clock = pygame.time.Clock()
-# running = True
+count = 0
+while running:
+    
+    # poll for events
+    # pygame.QUIT event means the user clicked X to close your window
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    bin_to_draw = points[0]
+    # bin_to_draw = points[int(count)]
+    # fill the screen with a color to wipe away anything from last frame
+    screen.fill("black")
 
-# while running:
-#     # poll for events
-#     # pygame.QUIT event means the user clicked X to close your window
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
+    # RENDER YOUR GAME HERE
+    sound = pygame.mixer.Sound('voice-telephony-8khz.wav')
+    sound.play()
+    for i in range(len(bin_to_draw)):
+        maxmag = max(bin_to_draw)
+        height = bin_to_draw[i]/maxmag * 720
+        pygame.draw.rect(screen, (255,255,255), (i*5, 720-height, 5, height))
 
-#     # fill the screen with a color to wipe away anything from last frame
-#     screen.fill("black")
+    
+    # flip() the display to put your work on screen
+    pygame.display.flip()
+    count += 1
+    clock.tick(60)  # limits FPS to 60
 
-#     # RENDER YOUR GAME HERE
-#     sound = pygame.mixer.Sound('voice-telephony-8khz.wav')
-#     sound.play()
-#     # flip() the display to put your work on screen
-#     pygame.display.flip()
+pygame.quit()
+pygame.mixer.quit()
 
-#     clock.tick(60)  # limits FPS to 60
-
-# pygame.quit()
-# pygame.mixer.quit()
-
-# # sound = pygame.mixer.Sound('voice-telephony-8khz.wav')
-# # samples = pygame.sndarray.samples(sound)
-# # print(samples)
+# sound = pygame.mixer.Sound('voice-telephony-8khz.wav')
+# samples = pygame.sndarray.samples(sound)
+# print(samples)
