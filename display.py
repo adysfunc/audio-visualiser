@@ -59,13 +59,13 @@ def read():
     # freq_res = wv_obj.getframerate()/wv_obj.getnframes() 
     freq_res = FRAMERATE/512
     freq_bins = [np.arange(len(values))* freq_res for values in positive_spectrum]
-    return positive_spectrum
+    return positive_spectrum, freq_res
     # print(len(freq_bins[0]), len(positive_spectrum[0]))
     # actual_freqbins = np.arange(len(positive_spectrum)) * freq_res
     # print(type(freq_bins), type(positive_spectrum[0]))
 
-points = read()
-delta = 512/60
+points, frequency_resolution = read()
+delta = frequency_resolution/60
 pygame.mixer.pre_init(frequency = 8000, size= -16, channels = 1, buffer = 512)
 pygame.init()
 pygame.mixer.init()
@@ -81,8 +81,9 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    bin_to_draw = points[0]
-    # bin_to_draw = points[int(count)]
+    # bin_to_draw = points[0]
+    count += delta
+    bin_to_draw = points[int(count)]
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
 
@@ -91,13 +92,11 @@ while running:
     sound.play()
     for i in range(len(bin_to_draw)):
         maxmag = max(bin_to_draw)
+        bar_width = screen.get_width()/len(bin_to_draw)
         height = bin_to_draw[i]/maxmag * 720
-        pygame.draw.rect(screen, (255,255,255), (i*5, 720-height, 5, height))
-
-    
+        pygame.draw.rect(screen, (255,255,255), (i*bar_width, 720-height, bar_width, height))
     # flip() the display to put your work on screen
     pygame.display.flip()
-    count += 1
     clock.tick(60)  # limits FPS to 60
 
 pygame.quit()
